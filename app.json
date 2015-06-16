@@ -1,0 +1,7 @@
+{
+  "name": "Periscope Recorder",
+  "description": "A simple webapp to check/parse Periscope URL from Twitter JSON",
+  "repository": "https://github.com/alexshive/PeriscopeRecorder",
+  "logo": "https://github.com/alexshive/PeriscopeRecorder/public/node.svg",
+  "keywords": ["periscope", "record"]
+}

@@ -1,0 +1,18 @@
+#checklist-panel ul {
+	padding: 0;
+}
+#checklist-panel ul li {
+	display: block;
+}
+#main {
+	margin-top: 20px;
+}
+#navbar li {
+	margin: 5px;
+}
+.navbar {
+	border-radius: 0 !important;
+}
+.h1, .h2, .h3, h1, h2, h3 {
+	margin-top: 0;
+}

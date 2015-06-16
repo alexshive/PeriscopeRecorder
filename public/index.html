@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Periscope Recorder</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/jquery.json-viewer.css">
+	<link rel="stylesheet" href="css/style.css">
+	<script src="/js/modernizr.custom.js"></script>
+</head>
+<body>
+
+	<nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand"><span class="glyphicon glyphicon-floppy-save"></span> Periscope Recorder</a>
+        </div>
+        <div id="navbar" class="">
+          <ul class="nav navbar-nav navbar-right">
+            <li><button class="btn btn-lg btn-danger" id="record"><span class="glyphicon glyphicon-record"></span> Record</button></li>
+            <li><button class="btn btn-lg btn-default" id="stop"><span class="glyphicon glyphicon-stop"></span> Stop</button></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+	<div class="container-fluid" id="main">
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="progress" style="display: none">
+					  <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+					  </div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-6">
+				<div class="panel panel-info" id="results-panel">
+					<div class="panel-heading">
+					  <h3 class="panel-title">Status</h3>
+					</div>
+					<div class="panel-body" id="results"><h3 align="center" class="text-success">Ready to record</h3></div>
+				</div>
+			</div>
+			<div class="col-xs-6">
+				<div class="panel panel-success" id="checklist-panel">
+					<div class="panel-heading">
+					  <h3 class="panel-title">Checklist</h3>
+					</div>
+					<div class="panel-body"><ul></ul></div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="panel panel-warning" id="debug-panel" style="display:none">
+					<div class="panel-heading">
+					  <h3 class="panel-title">Debug</h3>
+					</div>
+					<div class="panel-body"><pre id="json-renderer"></pre></div>
+				</div>
+			</div>
+		</div>
+
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script>
+
+var json;
+
+function record() {
+	$results = $('#results');
+	$results.html("<h2 align='center'>Recording...</h2>");
+	$('#results-panel').removeClass('hidden');
+	$.get('/record', function(data) {
+		json = $.parseJSON(data);
+		for (var i = json.length - 1; i >= 0; i--) {
+			var tweet_id = json[i]["id_str"];
+			if(json[i]["entities"]) {
+				var entities = json[i]["entities"];
+				if(entities["hashtags"][0]) {
+					if(entities["hashtags"][0]["text"]) {
+						var hashtag = entities["hashtags"][0]["text"];
+						if(hashtag == "Periscope") {
+							info("Periscope URL found");
+							if(entities["urls"]) {
+								var urlArray = entities["urls"][0];
+								var url = urlArray["expanded_url"];
+								var urlExists = simpleStorage.get(tweet_id);
+								if(url && !urlExists) {
+									// open browser
+									info("Found URL, opening browser...");
+									window.open(url,'_blank');
+									simpleStorage.set(tweet_id, url);
+								} else {
+									info("<a href='"+url+"' target='_blank'>Periscope URL</a> already exists, passing...");
+								}
+							}
+						}
+					}
+				}
+			}
+		};
+		debug(data);
+	})
+}
+
+function loading(is_loading) {
+	if(is_loading) {
+		$('.progress').fadeIn();
+	} else {
+		$('.progress').fadeOut();
+	}
+}
+
+function info(message) {
+	var info_panel = $('#results');
+	if(message) {
+		info_panel.html('<p>' + message + '</p>');
+	} else {
+		info_panel.html("");
+	}
+}
+
+function checklist(message) {
+	$('#checklist-panel .panel-body ul').append('<li class="text-success"><span class="glyphicon glyphicon-ok"></span> '+message+'</li>');
+}
+
+function debug(data) {
+	$('#json-renderer').jsonViewer(eval(data));
+	$('#debug-panel').show();
+}
+
+$(function() {
+
+	var auto_refresh;
+
+	if (Modernizr.localstorage) {
+	  checklist("Local database is available");
+	} else {
+	  // no native support for HTML5 storage :(
+	  // maybe try dojox.storage or a third-party solution
+	}
+
+	$('#record').on('click', function(e) {
+		auto_refresh = setInterval(record, 10000);
+		record();
+		loading(true);
+		return false;
+	});
+	$('#stop').on('click', function(e) {
+		loading(false);
+		clearInterval(auto_refresh);
+		return false;
+	});
+
+	checklist("Remember to open <b>Replay Media Catcher</b>");
+	checklist("Periscope recorder ready");
+});
+</script>
+<script src="/js/jquery.json-viewer.js"></script>
+<script src="/js/simpleStorage.js"></script>
+</body>
+</html>
